@@ -5,14 +5,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void myHandler(int signum) {
+void myHandler(int signum) { //prints which signal arrived
     printf("signal %d received\n", signum);
 }
 
 int main() {
 
 		printf("1170701 - %s\n", __FILE__);
-		sigset_t mask_initial, mask_child;
+		sigset_t mask_initial, mask_child; // declared variable to hold sets of signals
 
     //bloquear SIGINT e SIGQUIT inicialmente
     sigemptyset(&mask_initial);
@@ -24,7 +24,7 @@ int main() {
     signal(SIGTERM, SIG_IGN);
 
     //configurar myHandler para SIGCHLD antes da criação de processos
-    signal(SIGCHLD, myHandler);
+    signal(SIGCHLD, myHandler); //tells the parent to run myhandlr whenever a child process finishes
 
     while(1){
         
@@ -34,7 +34,7 @@ int main() {
             
 				//bloquear SIGTSTP adicionalmente no filho
             sigemptyset(&mask_child);
-            sigaddset(&mask_child, SIGTSTP);
+            sigaddset(&mask_child, SIGTSTP); //adds ctrl z to blocked list
             sigprocmask(SIG_BLOCK, &mask_child, NULL);
 
             //reset SIGCHLD

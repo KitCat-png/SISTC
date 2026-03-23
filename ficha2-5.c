@@ -19,7 +19,7 @@ int main(){
 		exit(0);
 	}
 
-	waitpid(r, NULL, 0);
+	waitpid(r, NULL, 0); //waits for the child to finish
 	printf("Conteúdo no pai: %s\n",ptr);
 	return 0;
 }
