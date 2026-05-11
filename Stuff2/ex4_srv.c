@@ -19,7 +19,7 @@ typedef struct {
     char student_name[100];
 } msg2_t;
 
-// Helper to read the bytes
+// Helper to read the bytes (same logic as client, protects against partial TCP reads)
 int myReadBlock(int s, void *buf, int count) {
     int r, nread = 0;
     while(nread < count) {
@@ -46,7 +46,14 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
+    
+    // ⭐ What does htons() do?
+    // "Host TO Network Short". Different computers store numbers backwards from each other (Endianness). 
+    // This converts our local port number into "Network Byte Order" so any machine can understand it.
     addr.sin_port = htons(atoi(argv[1]));
+    
+    // ⭐ What is INADDR_ANY?
+    // It tells the server to bind to ALL available network interfaces (like Wi-Fi, Ethernet, and localhost) at once.
     addr.sin_addr.s_addr = INADDR_ANY;
 
     //avoid "Address already in use" errors
@@ -75,7 +82,7 @@ int main(int argc, char *argv[]) {
             msg1_t m1;
             msg2_t m2;
             
-            // Clear m2 to prevent garbage characters 
+            // Clear m2 to prevent garbage characters from being sent back 
             memset(&m2, 0, sizeof(m2)); 
 
             //Read the incoming msg1_t block
@@ -89,7 +96,9 @@ int main(int argc, char *argv[]) {
                 m2.text[i] = '\0'; // Ensure it's clean
 
                 //Identify student by ID
-                // We check the first 7 chars since there's no null terminator
+                // ⭐ Why strncmp instead of strcmp?
+                // Because we know student_id does NOT have a null terminator. 
+                // We must explicitly tell the function to stop comparing after exactly 7 characters.
                 if (strncmp(m1.student_id, "1170701", 7) == 0) {
                     strcpy(m2.student_name, "Catarina");
                 } 

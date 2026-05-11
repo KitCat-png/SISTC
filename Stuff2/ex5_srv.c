@@ -8,7 +8,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-
 typedef struct {
     char student_id[7];
     char text[2000];
@@ -54,11 +53,18 @@ int main(int argc, char *argv[]) {
 
             // --- RECEBER ------------------------------------------------------------------
             // ID
+            // ⭐ Why use fread() instead of fgets() for the ID?
+            // The ID is exactly 7 bytes with NO null-terminator (\n or \0). 
+            // fread() grabs exactly those raw bytes, whereas fgets() might read too far trying to find a newline.
             if ((int)fread(m1.student_id, 1, 7, fp) != 7) { fclose(fp); exit(1); }
 
             // Text tamanho
             char nbytes_str[32];
             if (fgets(nbytes_str, sizeof(nbytes_str), fp) == NULL) { fclose(fp); exit(1); }
+            
+            // ⭐ Why use atoi()?
+            // We receive the size as a text string (e.g., "15\n") over the network. 
+            // atoi() converts that string into an actual integer (15) so we can use it to safely read the text block.
             int nb_text = atoi(nbytes_str);
             if (nb_text > (int)sizeof(m1.text) - 1) nb_text = sizeof(m1.text) - 1;
 
@@ -77,6 +83,9 @@ int main(int argc, char *argv[]) {
 
             // --- ENVIAR -----------------------------------------------------------------
             // 1) Text tamanho, bytes
+            // ⭐ Why send the size first? (Length-Prefixed Framing)
+            // TCP is a continuous stream of bytes. By sending the size first, the client knows EXACTLY how many bytes to read, 
+            // preventing it from getting stuck waiting for data that isn't coming.
             fprintf(fp, "%d\n", nr);
             fwrite(m2.text, 1, nr, fp);
 
@@ -84,6 +93,10 @@ int main(int argc, char *argv[]) {
             int name_len = strlen(m2.student_name);
             fprintf(fp, "%d\n", name_len);
             fwrite(m2.student_name, 1, name_len, fp);
+            
+            // ⭐ What does fflush do here?
+            // FILE streams (like fp) use internal memory buffers. fflush() forces the server to push all that buffered data 
+            // out into the network socket immediately, ensuring the client isn't left hanging.
             fflush(fp);
 
             fclose(fp);

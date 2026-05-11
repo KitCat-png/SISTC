@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-
 #define ID_MARIA "1231098"
 #define ID_CAT "1170701"
 
@@ -20,11 +19,14 @@ int main(int argc, char *argv[]) {
     char user_msg[2000];
     printf("Enter message: ");
     if (fgets(user_msg, sizeof(user_msg), stdin) == NULL) exit(1);
+    
     struct addrinfo hints, *res;
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family = AF_INET;       // IPv4
+    hints.ai_socktype = SOCK_STREAM; // TCP
 
+    // ⭐ What is getaddrinfo for?
+    // It takes the human-readable IP and port (from argv) and converts it into the exact network structures needed to connect.
     if (getaddrinfo(argv[1], argv[2], &hints, &res) != 0) {
         perror("getaddrinfo");
         exit(1);
@@ -38,27 +40,32 @@ int main(int argc, char *argv[]) {
 
     // Send the sequence: ID\n + Message
     // change the ID here
+    
+    // ⭐ What does dprintf do?
+    // "dprintf" stands for "descriptor print format". It works exactly like printf, but writes directly to the socket file descriptor 's'.
     dprintf(s, "%s\n%s", ID_CAT, user_msg);
 
+    // Again, convert socket to FILE stream for easy reading
     FILE *fp = fdopen(s, "r+");
     if (!fp) exit(1);
 
     char linha1[2048], linha2[2048];
-   
+    
     // Read the two-line response from the server
     if (!fgets(linha1, sizeof(linha1), fp)) strcpy(linha1, "Error");
     if (!fgets(linha2, sizeof(linha2), fp)) strcpy(linha2, "Error");
 
+    // Calculate length BEFORE stripping the newlines (as per the specific logic of this code)
     int nbytes = strlen(linha1) + strlen(linha2);
 
-    // Remove \n for the final print
+    // Remove \n for the final print so everything formats nicely on one line per string
     linha1[strcspn(linha1, "\n")] = 0;
     linha2[strcspn(linha2, "\n")] = 0;
 
     // Required print format
     printf("Mensagem: %s\n" "Nome: %s\n""Total: %d\n", linha1, linha2, nbytes);
 
-    fclose(fp);
-    freeaddrinfo(res);
+    fclose(fp); // Closes stream and the socket
+    freeaddrinfo(res); // Frees the memory allocated by getaddrinfo
     return 0;
 }

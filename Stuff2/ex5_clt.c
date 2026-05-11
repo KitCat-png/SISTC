@@ -58,10 +58,15 @@ int main(int argc, char *argv[]) {
     fwrite(m1.student_id, 1, 7, fp);
 
     // Text
+    // ⭐️ Why fprintf for the length, but fwrite for the data?
+    // fprintf easily converts the integer 'text_len' into a readable string with a newline (e.g., "12\n").
+    // fwrite is then used to safely push the exact binary/character data of the text itself.
     fprintf(fp, "%d\n", text_len);
 
     // Text tamanho
     fwrite(m1.text, 1, text_len, fp);
+    
+    // Flush the buffer to ensure the message physically leaves the client over the network
     fflush(fp);
 
     // --- RECEBER -------------------------------------------------------------------
@@ -71,8 +76,13 @@ int main(int argc, char *argv[]) {
     // Text Maiusculas
     if (fgets(nbytes_str, sizeof(nbytes_str), fp) == NULL) { fclose(fp); exit(1); }
     int nb_text = atoi(nbytes_str);
+    
+    // ⭐ Why use the return value of fread?
+    // fread returns the number of items it ACTUALLY read. We use this to correctly place the null-terminator ('\0') 
+    // at the very end of the string so we can safely printf it later.
     int nr = fread(m2.text, 1, nb_text, fp);
     m2.text[nr] = '\0';
+    
     nbytes += strlen(nbytes_str) + nr;
 
     // Nome

@@ -12,6 +12,9 @@ int my_connect(char *servername, char *port);
 int main (int argc, char* const argv[]) {
   printf("1170701 - %s\n", __FILE__);
   char buffer[4096];
+  
+  // ⭐ Why the double \r\n\r\n at the end?
+  // In the HTTP protocol, a blank line (Carriage Return + Line Feed) is strictly required to tell the web server "I am done sending headers, you can process the request now."
   char http_msg1[] = "GET /~jes/sistc/pl/ola.html HTTP/1.1\r\n"
                      "Host: ave.dee.isep.ipp.pt\r\n\r\n";
     
@@ -29,7 +32,9 @@ int main (int argc, char* const argv[]) {
   }
 
   // Skip HTTP headers
-  //read lines until we find the blank line "\r\n" 
+  // ⭐ Why do we need this first loop?
+  // When the web server replies, it sends metadata headers first (like 'Content-Type: text/html'), followed by a blank line, then the actual HTML code. 
+  // This loop intercepts and throws away the metadata headers until it hits that blank line, so we only print the clean HTML body.
   while (fgets(buffer, sizeof(buffer), fp) != NULL) {
     if (strcmp(buffer, "\r\n") == 0 || strcmp(buffer, "\n") == 0) {
       break; 
